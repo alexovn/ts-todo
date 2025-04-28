@@ -1,0 +1,147 @@
+:root {
+	--gray-color: #e3e3e3;
+	--strong-gray-color: #34495e;
+	--red-color: #eb4d4b;
+	--breeze-100: #c7ecee;
+	--breeze-500: #7ed6df;
+	--breeze-700: #22a6b3;
+}
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+ul {
+	list-style: none;
+}
+
+input,
+textarea,
+button {
+	font-family: inherit;
+}
+
+textarea {
+	resize: none;
+}
+
+html {
+	font-size: 16px;
+}
+
+body {
+	font-family: 'Roboto Condensed';
+	line-height: 1;
+	color: #000;
+}
+
+.btn {
+	padding: 0.625rem 1.5rem;
+	background: var(--red-color);
+	color: #fff;
+	border: none;
+	border-radius: 0.25rem;
+	cursor: pointer;
+	transition: background 0.2s ease-out;
+
+	&:hover {
+		background: #d73836;
+	}
+}
+
+.wrapper {
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
+
+.title {
+	margin: 0 0 1rem;
+	font-size: 2.19rem;
+}
+
+.completed {
+	text-decoration: line-through;
+	color: rgba(0, 0, 0, .5);
+}
+
+.checkbox,
+.pin-checkbox {
+	position: absolute;
+	opacity: 0;
+	z-index: -1;
+}
+
+.checkbox + span {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	user-select: none;
+	cursor: pointer;
+
+	&::before {
+		content: '';
+		display: inline-block;
+		width: 1rem;
+		height: 1rem;
+		border: 1px solid var(--gray-color);
+		border-radius: 0.25rem;
+		background: #fff;
+		background-repeat: no-repeat;
+		background-position: center center;
+		background-size: 60% 60%;
+	}
+}
+
+.checkbox:checked + span {
+	&::before {
+		border-color: #0b76ef;
+		background-color: #0b76ef;
+		background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23fff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3e%3c/svg%3e");
+	}
+}
+
+.checkbox:not(:disabled):not(:checked) + span {
+	&:hover {
+		&::before {
+			border-color: #b3d7ff;
+		}
+	}
+}
+
+.checkbox:focus + label {
+	&::before {
+		box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+	}
+}
+
+.pin-checkbox + span {
+	display: block;
+	cursor: pointer;
+	opacity: 0;
+}
+
+.pin-checkbox:checked + span {
+	opacity: 1;
+}
+
+.logo {
+	margin-bottom: 1.5rem;
+
+	&-wrapper {
+		width: 100px;
+		height: 100px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		img {
+			width: 100%;
+			height: 100%;
+		}
+	}
+}
