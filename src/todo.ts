@@ -72,21 +72,21 @@ export class Todo {
     })
   }
 
-  createList(): void {
-    const list = document.querySelector('.todo-app__list')
-    list!.innerHTML = ''
+  // createList(): void {
+  //   const list = document.querySelector('.todo-app__list')
+  //   list!.innerHTML = ''
 
-    if (this.todos.length) {
-      const listFragment = new DocumentFragment()
+  //   if (this.todos.length) {
+  //     const listFragment = new DocumentFragment()
 
-      for (const todo of this.todos) {
-        const item = this.createItem(todo)
-        listFragment.append(item)
-      }
+  //     for (const todo of this.todos) {
+  //       const item = this.createItem(todo)
+  //       listFragment.append(item)
+  //     }
 
-      list?.append(listFragment)
-    }
-  }
+  //     list?.append(listFragment)
+  //   }
+  // }
 
   createItem(todo: TodoI): HTMLElement {
     const item = document.createElement('li')
@@ -108,13 +108,48 @@ export class Todo {
         >
         </button>
     `
-    const todoName = item.querySelector('.todo-app__item-name')
-    todoName!.textContent = todo.name
+    const todoName = item.querySelector('.todo-app__item-name') as HTMLLabelElement
+    let name = todo.name
+    todoName.textContent = name
+    todoName.addEventListener('dblclick', () => {
+      const input = document.createElement('input')
+      input.classList.add('todo-app__item-editor')
+      input.value = name
+      item.insertBefore(input, todoName)
+      todoName.remove()
+      input.focus()
 
-    const removeBtn = item.querySelector('.todo-app__remove-btn')
-    removeBtn?.addEventListener('click', () => {
-      this.todos = this.todos.filter(t => t.id !== todo.id)
-      this.createList()
+      // events
+      input.addEventListener('change', (e) => {
+        name = (e.target as HTMLInputElement).value
+      })
+      input.addEventListener('blur', () => {
+        item.insertBefore(todoName, input)
+        todoName.textContent = name
+        input.remove()
+      })
+    })
+
+    const removeBtn = item.querySelector('.todo-app__remove-btn') as HTMLButtonElement
+    removeBtn.addEventListener('click', () => {
+      // this.todos = this.todos.filter(t => t.id !== todo.id)
+      item.remove()
+    })
+
+    const completedCheckbox = item.querySelector('.todo-app__item-checkbox input') as HTMLInputElement
+    completedCheckbox.checked = todo.completed
+    completedCheckbox.addEventListener('change', (e) => {
+      const checked = (e.target as HTMLInputElement).checked
+      // this.todos = this.todos.map(t => ({
+      //   ...t,
+      //   completed: t.id === todo.id ? checked : t.completed
+      // }))
+
+      if (checked) {
+        todoName.classList.add('completed')
+      } else {
+        todoName.classList.remove('completed')
+      }
     })
 
     return item
@@ -127,8 +162,11 @@ export class Todo {
       completed: false,
       pinned: false
     }
-    this.todos.push(_todo)
-    this.createList()
+    // this.todos.push(_todo)
+
+    const list = document.querySelector('.todo-app__list')
+    const item = this.createItem(_todo)
+    list?.append(item)
 
     this.todo = ''
     const input = document.querySelector('.todo-app__header-input') as HTMLInputElement
