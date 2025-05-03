@@ -1,15 +1,19 @@
 import { Todo as TodoI } from "./interfaces/todo.interface"
 import { uniqueId } from "./utils/uniqueId"
 
+type ActiveFilterType = 'All' | 'Active' | 'Completed'
+
 export class Todo {
   todo: string
   todos: TodoI[]
   selector: string
+  activeFilter: ActiveFilterType
 
   constructor(selector: string) {
     this.selector = selector
     this.todo = ''
     this.todos = []
+    this.activeFilter = 'All'
 
     this.init()
   }
@@ -17,6 +21,8 @@ export class Todo {
   init(): void {
     const root = document.querySelector(this.selector)
     this.createInitialTemplate(root)
+    this.createFilterListTemplate()
+    this.renderFilteredListSentence()
     this.bindEvents()
   }
 
@@ -123,6 +129,13 @@ export class Todo {
       // events
       input.addEventListener('change', (e) => {
         name = (e.target as HTMLInputElement).value
+        this.todos = this.todos.map(t => {
+          if (t.id !== todo.id) return t
+          return {
+            ...t,
+            name
+          }
+        })
       })
       input.addEventListener('blur', () => {
         updateTodo()
@@ -137,10 +150,17 @@ export class Todo {
     const removeBtn = item.querySelector('.todo-app__remove-btn') as HTMLButtonElement
     removeBtn.addEventListener('click', () => {
       item.remove()
+      this.todos = this.todos.filter(t => t.id !== todo.id)
+      this.renderFilteredListSentence()
     })
 
     const completedCheckbox = item.querySelector('.todo-app__item-checkbox input') as HTMLInputElement
     completedCheckbox.checked = todo.completed
+
+    if (completedCheckbox.checked) {
+      todoName.classList.add('completed')
+    }
+
     completedCheckbox.addEventListener('change', (e) => {
       const checked = (e.target as HTMLInputElement).checked
 
@@ -149,6 +169,17 @@ export class Todo {
       } else {
         todoName.classList.remove('completed')
       }
+
+      this.todos = this.todos.map(t => {
+        if (t.id !== todo.id) return t
+        return {
+          ...t,
+          completed: checked
+        }
+      })
+
+      this.createTodoList()
+      this.renderFilteredListSentence()
     })
 
     return item
@@ -165,9 +196,94 @@ export class Todo {
     const list = document.querySelector('.todo-app__list')
     const item = this.createTodo(_todo)
     list?.append(item)
+    this.todos.push(_todo)
+    this.renderFilteredListSentence()
 
     this.todo = ''
     const input = document.querySelector('.todo-app__header-input') as HTMLInputElement
     (input)!.value = ''
+  }
+
+  createTodoList() {
+    const list = document.querySelector('.todo-app__list')
+    const fragment = new DocumentFragment()
+
+    for (const todo of this.filteredTodos) {
+      const item = this.createTodo(todo)
+      fragment.append(item)
+    }
+    list?.replaceChildren(fragment)
+  }
+
+  createFilterListTemplate() {
+    const filterList = document.querySelector('.todo-app__filters') as HTMLElement
+    const fragment = new DocumentFragment()
+    const filters = [
+      {
+        label: 'All',
+      },
+      {
+        label: 'Active',
+      },
+      {
+        label: 'Completed',
+      },
+    ]
+
+    for (const filter of filters) {
+      const item = document.createElement('li')
+      item.classList.add('todo-app__filters-item')
+      item.innerHTML = `<a href="#!">${filter.label}</a>`
+
+      if (filter.label === this.activeFilter) {
+        (item.firstChild as HTMLElement).classList.add('selected')
+      }
+
+      item.addEventListener('click', () => {
+        this.setActiveFilter(filter.label as ActiveFilterType)
+        const filterItems = document.querySelectorAll('.todo-app__filters-item')
+        for (const filterItem of filterItems) {
+          // @ts-ignore
+          filterItem.firstChild.classList.remove('selected')
+          // @ts-ignore
+          item.firstChild.classList.add('selected')
+        }
+      })
+      fragment.append(item)
+    }
+
+    filterList.append(fragment)
+  }
+
+  setActiveFilter(type: ActiveFilterType) {
+    if (type === 'All') {
+      this.activeFilter = 'All'
+    }
+    if (type === 'Active') {
+      this.activeFilter = 'Active'
+    }
+    if (type === 'Completed') {
+      this.activeFilter = 'Completed'
+    }
+    this.createTodoList()
+    this.renderFilteredListSentence()
+  }
+
+  get filteredTodos(): TodoI[] {
+    if (this.activeFilter === 'All') {
+      return this.todos
+    }
+    if (this.activeFilter === 'Active') {
+      return this.todos.filter(todo => !todo.completed)
+    }
+    if (this.activeFilter === 'Completed') {
+      return this.todos.filter(todo => todo.completed)
+    }
+    return []
+  }
+
+  renderFilteredListSentence() {
+    const counter = document.querySelector('.todo-app__counter') as HTMLElement
+    counter.textContent = `${this.filteredTodos.length} ${this.filteredTodos.length === 1 ? 'item' : 'items'} left`
   }
 }
