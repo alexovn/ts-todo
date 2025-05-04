@@ -22,8 +22,8 @@ export class Todo {
     const root = document.querySelector(this.selector)
     this.createInitialTemplate(root)
     this.createFilterListTemplate()
-    this.renderFilteredListSentence()
-    this.bindEvents()
+    this.createFilteredListSentence()
+    this.bindInitialEvents()
   }
 
   createInitialTemplate(root: Element | null): void {
@@ -54,7 +54,7 @@ export class Todo {
     `
   }
 
-  bindEvents() {
+  bindInitialEvents() {
     const input = document.querySelector('.todo-app__header-input') as HTMLInputElement
     input.addEventListener('input', (e) => {
       const value = (e.target as HTMLInputElement).value
@@ -69,6 +69,13 @@ export class Todo {
     const addTodoBtn = document.querySelector('.todo-app__header-btn')
     addTodoBtn?.addEventListener('click', () => {
       this.addTodo()
+    })
+
+    const removeCompletedTodosBtn = document.querySelector('.todo-app__clear-btn')
+    removeCompletedTodosBtn?.addEventListener('click', () => {
+      if (!this.todos.filter(todo => todo.completed).length) return
+      this.todos = this.todos.filter(todo => !todo.completed)
+      this.updateApp()
     })
   }
 
@@ -141,7 +148,7 @@ export class Todo {
     const removeBtn = item.querySelector('.todo-app__remove-btn') as HTMLButtonElement
     removeBtn.addEventListener('click', () => {
       this.todos = this.todos.filter(t => t.id !== todo.id)
-      this.renderFilteredListSentence()
+      this.createFilteredListSentence()
       itemEventController.abort()
       item.remove()
     }, {
@@ -172,8 +179,7 @@ export class Todo {
         }
       })
 
-      this.createTodoList()
-      this.renderFilteredListSentence()
+      this.updateApp()
     }, { signal: itemEventController.signal })
 
     return item
@@ -188,12 +194,12 @@ export class Todo {
     }
 
     this.todos.push(_todo)
-    this.createTodoList()
-    this.renderFilteredListSentence()
 
     this.todo = ''
     const input = document.querySelector('.todo-app__header-input') as HTMLInputElement
     input.value = ''
+
+    this.updateApp()
   }
 
   createTodoList() {
@@ -261,8 +267,7 @@ export class Todo {
     if (type === 'Completed') {
       this.activeFilter = 'Completed'
     }
-    this.createTodoList()
-    this.renderFilteredListSentence()
+    this.updateApp()
   }
 
   get filteredTodos(): TodoI[] {
@@ -278,8 +283,13 @@ export class Todo {
     return []
   }
 
-  renderFilteredListSentence() {
+  createFilteredListSentence() {
     const counter = document.querySelector('.todo-app__counter') as HTMLElement
     counter.textContent = `${this.filteredTodos.length} ${this.filteredTodos.length === 1 ? 'item' : 'items'} left`
+  }
+
+  updateApp(): void {
+    this.createTodoList()
+    this.createFilteredListSentence()
   }
 }
