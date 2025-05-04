@@ -37,6 +37,11 @@ body {
 	color: #000;
 }
 
+#todo {
+	width: 100%;
+	max-width: 35rem;
+}
+
 .btn {
 	padding: 0.625rem 1.5rem;
 	background: var(--red-color);

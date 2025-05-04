@@ -29,16 +29,6 @@ export class Todo {
   createInitialTemplate(root: Element | null): void {
     if (!root) return
     root.innerHTML = `
-    <div class="wrapper">
-      <div class="logo">
-        <div class="logo-wrapper">
-          <img
-            src="./typescript.svg"
-            alt="TypeScript logo"
-          />
-        </div>
-      </div>
-
       <div class="todo-app">
         <div class="todo-app__header">
           <input class="todo-app__header-input" type="text" placeholder="New ToDo">
@@ -61,7 +51,6 @@ export class Todo {
           </button>
         </div>
       </div>
-    </div>
     `
   }
 
