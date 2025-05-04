@@ -83,6 +83,16 @@ export class Todo {
     const item = document.createElement('li')
     item.classList.add('todo-app__item')
     item.innerHTML = `
+        <label class="todo-app__item-pin">
+          <input
+            type="checkbox"
+            class="pin-checkbox"
+          />
+          <span class="todo-app__item-pin-icon">
+            <i class="fas fa-thumbtack"></i>
+          </span>
+        </label>
+
         <label class="todo-app__item-checkbox">
           <input
             class="checkbox"
@@ -163,9 +173,9 @@ export class Todo {
     }
 
     completedCheckbox.addEventListener('change', (e) => {
-      const checked = (e.target as HTMLInputElement).checked
+      const completed = (e.target as HTMLInputElement).checked
 
-      if (checked) {
+      if (completed) {
         todoName.classList.add('completed')
       } else {
         todoName.classList.remove('completed')
@@ -175,11 +185,39 @@ export class Todo {
         if (t.id !== todo.id) return t
         return {
           ...t,
-          completed: checked
+          completed
         }
       })
 
       this.updateApp()
+    }, { signal: itemEventController.signal })
+
+    const pinnedCheckbox = item.querySelector('.todo-app__item-pin input') as HTMLInputElement
+    pinnedCheckbox.checked = todo.pinned
+
+    if (pinnedCheckbox.checked) {
+      item.classList.add('pinned')
+    }
+
+    pinnedCheckbox.addEventListener('change', (e) => {
+      const pinned = (e.target as HTMLInputElement).checked
+
+      if (pinned) {
+        item.classList.add('pinned')
+      } else {
+        item.classList.remove('pinned')
+      }
+
+      this.todos = this.todos.map(t => {
+        if (t.id !== todo.id) return t
+        return {
+          ...t,
+          pinned
+        }
+      })
+
+      this.updateApp()
+
     }, { signal: itemEventController.signal })
 
     return item
