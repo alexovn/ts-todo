@@ -94,7 +94,10 @@ export class Todo {
     `
     const todoName = item.querySelector('.todo-app__item-name') as HTMLLabelElement
     let name = todo.name
+    let itemEventController: AbortController = new AbortController()
+
     todoName.textContent = name
+
     todoName.addEventListener('dblclick', () => {
       const input = document.createElement('input')
       let isUpdated = false
@@ -115,7 +118,6 @@ export class Todo {
         }
       }
 
-      // events
       input.addEventListener('change', (e) => {
         name = (e.target as HTMLInputElement).value
         this.todos = this.todos.map(t => {
@@ -125,22 +127,25 @@ export class Todo {
             name
           }
         })
-      })
+      }, { signal: itemEventController.signal })
       input.addEventListener('blur', () => {
         updateTodo()
-      })
+      }, { signal: itemEventController.signal })
       input.addEventListener('keydown', (e: KeyboardEvent) => {
         if (e.code === 'Enter') {
           updateTodo()
         }
-      })
-    })
+      }, { signal: itemEventController.signal })
+    }, { signal: itemEventController.signal })
 
     const removeBtn = item.querySelector('.todo-app__remove-btn') as HTMLButtonElement
     removeBtn.addEventListener('click', () => {
-      item.remove()
       this.todos = this.todos.filter(t => t.id !== todo.id)
       this.renderFilteredListSentence()
+      itemEventController.abort()
+      item.remove()
+    }, {
+      signal: itemEventController.signal,
     })
 
     const completedCheckbox = item.querySelector('.todo-app__item-checkbox input') as HTMLInputElement
@@ -169,7 +174,7 @@ export class Todo {
 
       this.createTodoList()
       this.renderFilteredListSentence()
-    })
+    }, { signal: itemEventController.signal })
 
     return item
   }
@@ -182,25 +187,26 @@ export class Todo {
       pinned: false
     }
 
-    const list = document.querySelector('.todo-app__list')
-    const item = this.createTodo(_todo)
-    list?.append(item)
     this.todos.push(_todo)
+    this.createTodoList()
     this.renderFilteredListSentence()
 
     this.todo = ''
     const input = document.querySelector('.todo-app__header-input') as HTMLInputElement
-    (input)!.value = ''
+    input.value = ''
   }
 
   createTodoList() {
     const list = document.querySelector('.todo-app__list')
     const fragment = new DocumentFragment()
 
-    for (const todo of this.filteredTodos) {
-      const item = this.createTodo(todo)
-      fragment.append(item)
+    if (this.filteredTodos.length) {
+      for (const todo of this.filteredTodos) {
+        const item = this.createTodo(todo)
+        fragment.append(item)
+      }
     }
+
     list?.replaceChildren(fragment)
   }
 
@@ -229,14 +235,15 @@ export class Todo {
       }
 
       item.addEventListener('click', () => {
-        this.setActiveFilter(filter.label as ActiveFilterType)
         const filterItems = document.querySelectorAll('.todo-app__filters-item')
+
         for (const filterItem of filterItems) {
           // @ts-ignore
           filterItem.firstChild.classList.remove('selected')
-          // @ts-ignore
-          item.firstChild.classList.add('selected')
         }
+        // @ts-ignore
+        item.firstChild.classList.add('selected')
+        this.setActiveFilter(filter.label as ActiveFilterType)
       })
       fragment.append(item)
     }
