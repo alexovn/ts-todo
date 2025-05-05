@@ -1,6 +1,7 @@
-let idCounter = 0
 
 export function uniqueId(prefix: string) {
-  const id = ++idCounter
-  return prefix.toString() + id
+  const key = 'idCounter'
+  const counter = parseInt(localStorage.getItem(key) || '0', 10) + 1
+  localStorage.setItem(key, counter.toString())
+  return `${prefix}${counter}`
 }

@@ -4,13 +4,17 @@ import { uniqueId } from "./utils/uniqueId"
 type ActiveFilterType = 'All' | 'Active' | 'Completed'
 
 export class Todo {
-  todo: string
-  todos: TodoI[]
-  selector: string
-  activeFilter: ActiveFilterType
+  private todo: string
+  private todos: TodoI[]
+  private selector: string
+  private activeFilter: ActiveFilterType
+  private root: HTMLElement | null
+  private input: HTMLInputElement | null
 
   constructor(selector: string) {
     this.selector = selector
+    this.root = document.querySelector(this.selector) || null
+    this.input = null
     this.todo = ''
     this.todos = []
     this.activeFilter = 'All'
@@ -18,18 +22,17 @@ export class Todo {
     this.init()
   }
 
-  init(): void {
-    const root = document.querySelector(this.selector)
-    this.createInitialTemplate(root)
+  private init(): void {
+    this.createInitialTemplate()
     this.createFilterListTemplate()
     this.bindInitialEvents()
     this.getTodosFromLocalStorage()
     this.updateApp()
   }
 
-  createInitialTemplate(root: Element | null): void {
-    if (!root) return
-    root.innerHTML = `
+  private createInitialTemplate(): void {
+    if (!this.root) return
+    this.root.innerHTML = `
       <div class="todo-app">
         <div class="todo-app__header">
           <input class="todo-app__header-input" type="text" placeholder="New ToDo">
@@ -55,13 +58,13 @@ export class Todo {
     `
   }
 
-  bindInitialEvents() {
-    const input = document.querySelector('.todo-app__header-input') as HTMLInputElement
-    input.addEventListener('input', (e) => {
+  private bindInitialEvents(): void {
+    this.input = this.root?.querySelector('.todo-app__header-input') || null
+    this.input?.addEventListener('input', (e) => {
       const value = (e.target as HTMLInputElement).value
       this.todo = value
     })
-    input.addEventListener('keydown', (e: KeyboardEvent) => {
+    this.input?.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.code === 'Enter') {
         this.addTodo()
       }
@@ -81,7 +84,7 @@ export class Todo {
     })
   }
 
-  createTodo(todo: TodoI): HTMLElement {
+  private createTodo(todo: TodoI): HTMLElement {
     const item = document.createElement('li')
     item.classList.add('todo-app__item')
     item.innerHTML = `
@@ -111,13 +114,15 @@ export class Todo {
         >
         </button>
     `
-    const todoName = item.querySelector('.todo-app__item-name') as HTMLLabelElement
+    const todoName = item.querySelector('.todo-app__item-name') || null
     let name = todo.name
     let itemEventController: AbortController = new AbortController()
 
-    todoName.textContent = name
+    if (todoName) {
+      todoName.textContent = name
+    }
 
-    todoName.addEventListener('dblclick', () => {
+    todoName?.addEventListener('dblclick', () => {
       const input = document.createElement('input')
       let isUpdated = false
 
@@ -128,6 +133,7 @@ export class Todo {
       input.focus()
 
       function updateTodo() {
+        if (!todoName) return
         todoName.textContent = name
 
         if (!isUpdated) {
@@ -139,14 +145,7 @@ export class Todo {
 
       input.addEventListener('change', (e) => {
         name = (e.target as HTMLInputElement).value
-        this.todos = this.todos.map(t => {
-          if (t.id !== todo.id) return t
-          return {
-            ...t,
-            name
-          }
-        })
-        this.setTodosToLocalStorage()
+        this.updateTodoProperty(todo.id, 'name', name)
       }, { signal: itemEventController.signal })
       input.addEventListener('blur', () => {
         updateTodo()
@@ -158,8 +157,8 @@ export class Todo {
       }, { signal: itemEventController.signal })
     }, { signal: itemEventController.signal })
 
-    const removeBtn = item.querySelector('.todo-app__remove-btn') as HTMLButtonElement
-    removeBtn.addEventListener('click', () => {
+    const removeBtn = item.querySelector('.todo-app__remove-btn')
+    removeBtn?.addEventListener('click', () => {
       this.todos = this.todos.filter(t => t.id !== todo.id)
       this.setTodosToLocalStorage()
       this.createFilteredListSentence()
@@ -173,27 +172,14 @@ export class Todo {
     completedCheckbox.checked = todo.completed
 
     if (completedCheckbox.checked) {
-      todoName.classList.add('completed')
+      todoName?.classList.add('completed')
     }
 
     completedCheckbox.addEventListener('change', (e) => {
       const completed = (e.target as HTMLInputElement).checked
 
-      if (completed) {
-        todoName.classList.add('completed')
-      } else {
-        todoName.classList.remove('completed')
-      }
-
-      this.todos = this.todos.map(t => {
-        if (t.id !== todo.id) return t
-        return {
-          ...t,
-          completed
-        }
-      })
-
-      this.setTodosToLocalStorage()
+      todoName?.classList.toggle('completed', completed)
+      this.updateTodoProperty(todo.id, 'completed', completed)
       this.updateApp()
     }, { signal: itemEventController.signal })
 
@@ -207,28 +193,17 @@ export class Todo {
     pinnedCheckbox.addEventListener('change', (e) => {
       const pinned = (e.target as HTMLInputElement).checked
 
-      if (pinned) {
-        item.classList.add('pinned')
-      } else {
-        item.classList.remove('pinned')
-      }
-
-      this.todos = this.todos.map(t => {
-        if (t.id !== todo.id) return t
-        return {
-          ...t,
-          pinned
-        }
-      })
-
-      this.setTodosToLocalStorage()
+      item.classList.toggle('pinned', pinned)
+      this.updateTodoProperty(todo.id, 'pinned', pinned)
       this.updateApp()
     }, { signal: itemEventController.signal })
 
     return item
   }
 
-  addTodo(): void {
+  private addTodo(): void {
+    if (!this.todo.trim()) return
+
     const _todo = {
       id: uniqueId('todo-'),
       name: this.todo,
@@ -240,13 +215,15 @@ export class Todo {
     this.setTodosToLocalStorage()
 
     this.todo = ''
-    const input = document.querySelector('.todo-app__header-input') as HTMLInputElement
-    input.value = ''
+
+    if (this.input) {
+      this.input.value = ''
+    }
 
     this.updateApp()
   }
 
-  createTodoList() {
+  private createTodoList(): void {
     const list = document.querySelector('.todo-app__list')
     const fragment = new DocumentFragment()
 
@@ -260,7 +237,7 @@ export class Todo {
     list?.replaceChildren(fragment)
   }
 
-  createFilterListTemplate() {
+  private createFilterListTemplate(): void {
     const filterList = document.querySelector('.todo-app__filters') as HTMLElement
     const fragment = new DocumentFragment()
     const filters = [
@@ -301,7 +278,7 @@ export class Todo {
     filterList.append(fragment)
   }
 
-  setActiveFilter(type: ActiveFilterType) {
+  private setActiveFilter(type: ActiveFilterType): void {
     if (type === 'All') {
       this.activeFilter = 'All'
     }
@@ -314,7 +291,7 @@ export class Todo {
     this.updateApp()
   }
 
-  get filteredTodos(): TodoI[] {
+  private get filteredTodos(): TodoI[] {
     if (this.activeFilter === 'All') {
       return this.todos
     }
@@ -327,32 +304,37 @@ export class Todo {
     return []
   }
 
-  createFilteredListSentence() {
+  private createFilteredListSentence(): void {
     const counter = document.querySelector('.todo-app__counter') as HTMLElement
     counter.textContent = `${this.filteredTodos.length} ${this.filteredTodos.length === 1 ? 'item' : 'items'} left`
   }
 
-  updateApp(): void {
+  private updateApp(): void {
     this.createTodoList()
     this.createFilteredListSentence()
   }
 
-  setTodosToLocalStorage() {
+  private setTodosToLocalStorage(): void {
     localStorage.setItem('todos', JSON.stringify(this.todos))
   }
 
-  getTodosFromLocalStorage() {
+  private getTodosFromLocalStorage(): void {
     const todos = localStorage.getItem('todos')
 
     if (todos) {
       this.todos = JSON.parse(todos)
     } else {
       this.todos.push({
-        id: 'todo-0',
+        id: uniqueId('todo-'),
         name: 'Walk with a dog 🐕',
         completed: false,
         pinned: false
       })
     }
+  }
+
+  private updateTodoProperty(todoId: string, property: keyof TodoI, value: any): void {
+    this.todos = this.todos.map(t => t.id === todoId ? { ...t, [property]: value } : t)
+    this.setTodosToLocalStorage()
   }
 }
