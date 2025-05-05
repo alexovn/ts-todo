@@ -22,8 +22,9 @@ export class Todo {
     const root = document.querySelector(this.selector)
     this.createInitialTemplate(root)
     this.createFilterListTemplate()
-    this.createFilteredListSentence()
     this.bindInitialEvents()
+    this.getTodosFromLocalStorage()
+    this.updateApp()
   }
 
   createInitialTemplate(root: Element | null): void {
@@ -75,6 +76,7 @@ export class Todo {
     removeCompletedTodosBtn?.addEventListener('click', () => {
       if (!this.todos.filter(todo => todo.completed).length) return
       this.todos = this.todos.filter(todo => !todo.completed)
+      this.setTodosToLocalStorage()
       this.updateApp()
     })
   }
@@ -144,6 +146,7 @@ export class Todo {
             name
           }
         })
+        this.setTodosToLocalStorage()
       }, { signal: itemEventController.signal })
       input.addEventListener('blur', () => {
         updateTodo()
@@ -158,6 +161,7 @@ export class Todo {
     const removeBtn = item.querySelector('.todo-app__remove-btn') as HTMLButtonElement
     removeBtn.addEventListener('click', () => {
       this.todos = this.todos.filter(t => t.id !== todo.id)
+      this.setTodosToLocalStorage()
       this.createFilteredListSentence()
       itemEventController.abort()
       item.remove()
@@ -189,6 +193,7 @@ export class Todo {
         }
       })
 
+      this.setTodosToLocalStorage()
       this.updateApp()
     }, { signal: itemEventController.signal })
 
@@ -216,8 +221,8 @@ export class Todo {
         }
       })
 
+      this.setTodosToLocalStorage()
       this.updateApp()
-
     }, { signal: itemEventController.signal })
 
     return item
@@ -232,6 +237,7 @@ export class Todo {
     }
 
     this.todos.push(_todo)
+    this.setTodosToLocalStorage()
 
     this.todo = ''
     const input = document.querySelector('.todo-app__header-input') as HTMLInputElement
@@ -329,5 +335,24 @@ export class Todo {
   updateApp(): void {
     this.createTodoList()
     this.createFilteredListSentence()
+  }
+
+  setTodosToLocalStorage() {
+    localStorage.setItem('todos', JSON.stringify(this.todos))
+  }
+
+  getTodosFromLocalStorage() {
+    const todos = localStorage.getItem('todos')
+
+    if (todos) {
+      this.todos = JSON.parse(todos)
+    } else {
+      this.todos.push({
+        id: 'todo-0',
+        name: 'Walk with a dog 🐕',
+        completed: false,
+        pinned: false
+      })
+    }
   }
 }
